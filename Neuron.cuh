@@ -14,7 +14,6 @@ public:
   Neuron();
   Neuron(const unsigned long num_input, const vector<double> &weight,
          const vector<double> &m, const vector<double> &nu,
-         const vector<double> &m_hat, const vector<double> &nu_hat, 
          const unsigned long iteration, const double bias, const int activation_type,
          const double dropout_rate);
 

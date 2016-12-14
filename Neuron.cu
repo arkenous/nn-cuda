@@ -21,8 +21,8 @@ using std::stringstream;
 
 
 struct learn_m_functor {
-  const double delta;
-  const double beta_one;
+  double delta;
+  double beta_one;
 
   learn_m_functor(double _delta, double _beta_one) {
     delta = _delta;
@@ -36,8 +36,8 @@ struct learn_m_functor {
 
 
 struct learn_nu_functor {
-  const double delta;
-  const double beta_two;
+  double delta;
+  double beta_two;
 
   learn_nu_functor(double _delta, double _beta_two) {
     delta = _delta;
@@ -51,11 +51,11 @@ struct learn_nu_functor {
 
 
 struct learn_functor {
-  const double beta_one;
-  const double beta_two;
-  const unsigned long iteration;
-  const double epsilon;
-  const double alpha;
+  double beta_one;
+  double beta_two;
+  unsigned long iteration;
+  double epsilon;
+  double alpha;
 
   learn_functor(double _beta_one, double _beta_two, unsigned long _iteration, double _epsilon, double _alpha) {
     beta_one = _beta_one;
@@ -72,7 +72,7 @@ struct learn_functor {
 
 
 struct output_functor {
-  const double dropout_rate;
+  double dropout_rate;
 
   output_functor(double _dropout_rate){
     dropout_rate = _dropout_rate;
@@ -171,10 +171,12 @@ void Neuron::learn(const double delta, const vector<double> &inputValues) {
     thrust::copy(d_nu.begin(), d_nu.end(), nu.begin());
 
     thrust::device_vector<double> d_weight(inputWeights.begin(), inputWeights.end());
-    thrust::transform(d_weight.begin(), d_weight.end(),
-                      thrust::make_transform_iterator(d_m.begin(), d_nu.begin(),
-                                        learn_functor(beta_one, beta_two, iteration, epsilon, alpha)),
-                      d_weight.begin(), thrust::minus<double>());
+    thrust::device_vector<double> d_adam_result(num_input);
+
+    thrust::transform(d_m.begin(), d_m.end(), d_nu.begin(), d_adam_result.begin(),
+                      learn_functor(beta_one, beta_two, iteration, epsilon, alpha));
+    thrust::transform(d_weight.begin(), d_weight.end(), d_adam_result.begin(), d_weight.begin(),
+                      thrust::minus<double>());
     thrust::copy(d_weight.begin(), d_weight.end(), inputWeights.begin());
 
 
@@ -194,13 +196,12 @@ double Neuron::output(const vector<double> &inputValues) {
   thrust::device_vector<double> d_inputValues(inputValues.begin(), inputValues.end());
   thrust::device_vector<double> d_inputWeights(inputWeights.begin(), inputWeights.end());
 
-  sum += thrust::reduce(
-      thrust::make_transform_iterator(d_inputValues.begin(),
-                                      d_inputWeights.begin(),
-                                      output_functor(dropout_rate)),
-      thrust::make_transform_iterator(d_inputValues.end(),
-                                      d_inputWeights.end(),
-                                      output_functor(dropout_rate)));
+  thrust::device_vector<double> d_functor_result(num_input);
+
+  thrust::transform(d_inputValues.begin(), d_inputValues.end(),
+                    d_inputWeights.begin(), d_functor_result.begin(),
+                    output_functor(dropout_rate));
+  sum += thrust::reduce(d_functor_result.begin(), d_functor_result.end());
 
   double activated;
   if (activation_type == 0) activated = activation_identity(sum);
@@ -223,13 +224,11 @@ double Neuron::learn_output(const vector<double> &inputValues) {
   thrust::device_vector<double> d_inputValues(inputValues.begin(), inputValues.end());
   thrust::device_vector<double> d_inputWeights(inputWeights.begin(), inputWeights.end());
 
-  sum += thrust::reduce(
-      thrust::make_transform_iterator(d_inputValues.begin(),
-                                      d_inputWeights.begin(),
-                                      thrust::multiplies<double>()),
-      thrust::make_transform_iterator(d_inputValues.end(),
-                                      d_inputWeights.end(),
-                                      thrust::multiplies<double>()));
+  thrust::device_vector<double> d_result(num_input);
+
+  thrust::transform(d_inputValues.begin(), d_inputValues.end(),
+                    d_inputWeights.begin(), d_result.begin(), thrust::multiplies<double>());
+  sum += thrust::reduce(d_result.begin(), d_result.end());
 
   // 得られた重み付き和を活性化関数に入れて出力を得る
   double activated;
