@@ -1,6 +1,6 @@
 
 #include "MultiLayerPerceptron.h"
-#include "Neuron.h"
+#include "Neuron.cuh"
 #include "iostream"
 #include <thread>
 #include <sstream>
@@ -56,22 +56,19 @@ MultiLayerPerceptron::MultiLayerPerceptron(const unsigned long input,
       for (int neuron = 0; neuron < middle_neuron_num; ++neuron)
         // 中間層の最初の層については，SdA末尾レイヤのニューロン数がニューロンへの入力数となる
         neuronPerLayer[neuron] = Neuron(input_neuron_num, emptyVector, emptyVector, emptyVector,
-                                        emptyVector, emptyVector, 0, 0.0,
-                                        middle_layer_type, dropout_rate);
+                                        0, 0.0, middle_layer_type, dropout_rate);
     else
       for (int neuron = 0; neuron < middle_neuron_num; ++neuron)
         // それ以降の層については，中間層の各層のニューロン数がニューロンへの入力数となる
         neuronPerLayer[neuron] = Neuron(middle_neuron_num, emptyVector, emptyVector, emptyVector,
-                                        emptyVector, emptyVector, 0, 0.0,
-                                        middle_layer_type, dropout_rate);
+                                        0, 0.0, middle_layer_type, dropout_rate);
     this->middle_neurons[layer] = neuronPerLayer;
   }
 
   this->outputNeurons.resize(output_neuron_num);
   for (int neuron = 0; neuron < output; ++neuron) {
     this->outputNeurons[neuron] = Neuron(middle_neuron_num, emptyVector, emptyVector, emptyVector,
-                                         emptyVector, emptyVector, 0, 0.0,
-                                         1, dropout_rate);
+                                         0, 0.0, 1, dropout_rate);
   }
 }
 
@@ -118,10 +115,8 @@ void MultiLayerPerceptron::setupSdA(const string &sda_params, const double dropo
       vector<double> weight = separate_by_camma(elems_per_param[0]);
       vector<double> m = separate_by_camma(elems_per_param[1]);
       vector<double> nu = separate_by_camma(elems_per_param[2]);
-      vector<double> m_hat = separate_by_camma(elems_per_param[3]);
-      vector<double> nu_hat = separate_by_camma(elems_per_param[4]);
 
-      sda_neurons[sda][neuron] = Neuron(weight.size(), weight, m, nu, m_hat, nu_hat,
+      sda_neurons[sda][neuron] = Neuron(weight.size(), weight, m, nu,
                                         iteration, bias, 1, dropout_rate);
 
       elems_per_param.clear();

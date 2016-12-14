@@ -22,14 +22,12 @@ DenoisingAutoencoder::DenoisingAutoencoder(const unsigned long num_input,
   middle_neurons.resize(middle_neuron_num);
   for (int neuron = 0; neuron < middle_neuron_num; ++neuron) {
     middle_neurons[neuron] = Neuron(input_neuron_num, emptyVector, emptyVector, emptyVector,
-                                    emptyVector, emptyVector,
                                     0, 0.0, middle_layer_type, 0.0);
   }
 
   output_neurons.resize(output_neuron_num);
   for (int neuron = 0; neuron < output_neuron_num; ++neuron) {
     output_neurons[neuron] = Neuron(middle_neuron_num, emptyVector, emptyVector, emptyVector,
-                                    emptyVector, emptyVector,
                                     0, 0.0, 0, 0.0);
   }
 
@@ -138,18 +136,6 @@ string DenoisingAutoencoder::learn(const vector<vector<double>> &input,
     // Adamのnuを詰める
     for (int nuNum = 0; nuNum < input_neuron_num; ++nuNum) {
       ss << middle_neurons[neuron].getNuIndexOf(nuNum) << ',';
-    }
-    ss << '|';
-
-    // Adamのm_hatを詰める
-    for (int mHatNum = 0; mHatNum < input_neuron_num; ++mHatNum) {
-      ss << middle_neurons[neuron].getMHatIndexOf(mHatNum) << ',';
-    }
-    ss << '|';
-
-    // Adamのnu_hatを詰める
-    for (int nuHatNum = 0; nuHatNum < input_neuron_num; ++nuHatNum) {
-      ss << middle_neurons[neuron].getNuHatIndexOf(nuHatNum) << ',';
     }
     ss << '|';
 

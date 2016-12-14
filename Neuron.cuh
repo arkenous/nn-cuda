@@ -28,8 +28,6 @@ public:
   double getBias();
   double getMIndexOf(const int i);
   double getNuIndexOf(const int i);
-  double getMHatIndexOf(const int i);
-  double getNuHatIndexOf(const int i);
 
   unsigned long getIteration();
 
@@ -54,8 +52,6 @@ private:
   unsigned long iteration;
   vector<double> m;
   vector<double> nu;
-  vector<double> m_hat;
-  vector<double> nu_hat;
 
   double dropout_rate; // どれくらいの割合で中間層ニューロンをDropoutさせるか
   double dropout_mask; // Dropoutのマスク値．0.0で殺して1.0で生かす

@@ -1,7 +1,15 @@
 
 #include <iostream>
 #include <sstream>
-#include "Neuron.h"
+
+#include <thrust/host_vector.h>
+#include <thrust/device_vector.h>
+#include <thrust/transform.h>
+#include <thrust/copy.h>
+#include <thrust/iterator/transform_iterator.h>
+#include <thrust/functional.h>
+
+#include "Neuron.cuh"
 
 using std::vector;
 using std::random_device;
@@ -10,6 +18,71 @@ using std::uniform_real_distribution;
 using std::max;
 using std::string;
 using std::stringstream;
+
+
+struct learn_m_functor {
+  const double delta;
+  const double beta_one;
+
+  learn_m_functor(double _delta, double _beta_one) {
+    delta = _delta;
+    beta_one = _beta_one;
+  }
+
+  __host__ __device__ double operator()(const double& m, const double& inputValue) const {
+    return beta_one * m + (1 - beta_one) * (delta * inputValue);
+  }
+};
+
+
+struct learn_nu_functor {
+  const double delta;
+  const double beta_two;
+
+  learn_nu_functor(double _delta, double _beta_two) {
+    delta = _delta;
+    beta_two = _beta_two;
+  }
+
+  __host__ __device__ double operator()(const double& nu, const double& inputValue) const {
+    return beta_two * nu + (1 - beta_two) * pow((delta * inputValue), 2);
+  }
+};
+
+
+struct learn_functor {
+  const double beta_one;
+  const double beta_two;
+  const unsigned long iteration;
+  const double epsilon;
+  const double alpha;
+
+  learn_functor(double _beta_one, double _beta_two, unsigned long _iteration, double _epsilon, double _alpha) {
+    beta_one = _beta_one;
+    beta_two = _beta_two;
+    iteration = _iteration;
+    epsilon = _epsilon;
+    alpha = _alpha;
+  }
+
+  __host__ __device__ double operator()(const double& m, const double& nu) {
+    return alpha * ((m / (1 - pow(beta_one, iteration))) / (sqrt(nu / (1 - pow(beta_two, iteration))) + epsilon));
+  }
+};
+
+
+struct output_functor {
+  const double dropout_rate;
+
+  output_functor(double _dropout_rate){
+    dropout_rate = _dropout_rate;
+  }
+
+  __host__ __device__ double operator()(const double& inputValue, const double& weight) const {
+    return inputValue * (weight * (1.0 - dropout_rate));
+  }
+};
+
 
 /**
  * vectorのサイズ確保のためだけに用いるNeuronのデフォルトコンストラクタ
@@ -25,7 +98,6 @@ Neuron::Neuron() {}
  */
 Neuron::Neuron(const unsigned long num_input, const vector<double> &weight,
                const vector<double> &m, const vector<double> &nu,
-               const vector<double> &m_hat, const vector<double> &nu_hat,
                const unsigned long iteration, const double bias, const int activation_type,
                const double dropout_rate) {
   this->num_input = num_input; // このニューロンへの入力数（前の層のニューロン数）
@@ -49,12 +121,6 @@ Neuron::Neuron(const unsigned long num_input, const vector<double> &weight,
 
   if (nu.size() > 0) this->nu = vector<double>(nu);
   else this->nu = vector<double>(num_input, 0.0);
-
-  if (m_hat.size() > 0) this->m_hat = vector<double>(m_hat);
-  else this->m_hat = vector<double>(num_input, 0.0);
-
-  if (nu_hat.size() > 0) this->nu_hat = vector<double>(nu_hat);
-  else this->nu_hat = vector<double>(num_input, 0.0);
 
   // 結合荷重が渡されていればそれをセットし，無ければ乱数で初期化
   if (weight.size() > 0) this->inputWeights = vector<double>(weight);
@@ -84,13 +150,33 @@ void Neuron::learn(const double delta, const vector<double> &inputValues) {
   // Adamを用いて重み付けを学習する
   if (this->dropout_mask == 1.0) {
     this->iteration += 1;
-    for (int i = 0; i < this->num_input; ++i) {
-      this->m[i] = this->beta_one * this->m[i] + (1 - this->beta_one) * (this->delta * inputValues[i]);
-      this->nu[i] = this->beta_two * this->nu[i] + (1 - this->beta_two) * pow((this->delta * inputValues[i]), 2);
-      this->m_hat[i] = this->m[i] / (1 - pow(this->beta_one, this->iteration));
-      this->nu_hat[i] = sqrt(this->nu[i] / (1 - pow(this->beta_two, this->iteration))) + this->epsilon;
-      this->inputWeights[i] -= this->alpha * (this->m_hat[i] / this->nu_hat[i]);
-    }
+
+    // allocate device side inputValues
+    thrust::device_vector<double> d_inputValues(inputValues.begin(), inputValues.end());
+
+    // allocate device side m
+    thrust::device_vector<double> d_m(m.begin(), m.end());
+
+    // transform m inputValues using learn_m_functor
+    thrust::transform(d_m.begin(), d_m.end(),
+                      d_inputValues.begin(), d_m.begin(), learn_m_functor(delta, beta_one));
+
+    // copy device side m to host side m
+    thrust::copy(d_m.begin(), d_m.end(), m.begin());
+
+
+    thrust::device_vector<double> d_nu(nu.begin(), nu.end());
+    thrust::transform(d_nu.begin(), d_nu.end(),
+                      d_inputValues.begin(), d_nu.begin(), learn_nu_functor(delta, beta_two));
+    thrust::copy(d_nu.begin(), d_nu.end(), nu.begin());
+
+    thrust::device_vector<double> d_weight(inputWeights.begin(), inputWeights.end());
+    thrust::transform(d_weight.begin(), d_weight.end(),
+                      thrust::make_transform_iterator(d_m.begin(), d_nu.begin(),
+                                        learn_functor(beta_one, beta_two, iteration, epsilon, alpha)),
+                      d_weight.begin(), thrust::minus<double>());
+    thrust::copy(d_weight.begin(), d_weight.end(), inputWeights.begin());
+
 
     // 確率的勾配降下でバイアスを更新
     this->bias -= (this->alpha * this->delta) - (this->alpha * this->rambda * this->bias);
@@ -104,8 +190,17 @@ void Neuron::learn(const double delta, const vector<double> &inputValues) {
  */
 double Neuron::output(const vector<double> &inputValues) {
   double sum = this->bias * (1.0 - this->dropout_rate);
-  for (int i = 0; i < this->num_input; ++i)
-    sum += inputValues[i] * (this->inputWeights[i] * (1.0 - this->dropout_rate));
+
+  thrust::device_vector<double> d_inputValues(inputValues.begin(), inputValues.end());
+  thrust::device_vector<double> d_inputWeights(inputWeights.begin(), inputWeights.end());
+
+  sum += thrust::reduce(
+      thrust::make_transform_iterator(d_inputValues.begin(),
+                                      d_inputWeights.begin(),
+                                      output_functor(dropout_rate)),
+      thrust::make_transform_iterator(d_inputValues.end(),
+                                      d_inputWeights.end(),
+                                      output_functor(dropout_rate)));
 
   double activated;
   if (activation_type == 0) activated = activation_identity(sum);
@@ -124,8 +219,17 @@ double Neuron::output(const vector<double> &inputValues) {
 double Neuron::learn_output(const vector<double> &inputValues) {
   // 入力側の細胞出力の重み付き和をとる
   double sum = this->bias;
-  for (int i = 0; i < this->num_input; ++i)
-    sum += inputValues[i] * this->inputWeights[i];
+
+  thrust::device_vector<double> d_inputValues(inputValues.begin(), inputValues.end());
+  thrust::device_vector<double> d_inputWeights(inputWeights.begin(), inputWeights.end());
+
+  sum += thrust::reduce(
+      thrust::make_transform_iterator(d_inputValues.begin(),
+                                      d_inputWeights.begin(),
+                                      thrust::multiplies<double>()),
+      thrust::make_transform_iterator(d_inputValues.end(),
+                                      d_inputWeights.end(),
+                                      thrust::multiplies<double>()));
 
   // 得られた重み付き和を活性化関数に入れて出力を得る
   double activated;
@@ -203,14 +307,6 @@ double Neuron::getMIndexOf(const int i) {
 
 double Neuron::getNuIndexOf(const int i) {
   return this->nu[i];
-}
-
-double Neuron::getMHatIndexOf(const int i) {
-  return this->m_hat[i];
-}
-
-double Neuron::getNuHatIndexOf(const int i) {
-  return this->nu_hat[i];
 }
 
 unsigned long Neuron::getIteration() {

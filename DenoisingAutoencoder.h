@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 #include <zconf.h>
-#include "Neuron.h"
+#include "Neuron.cuh"
 
 using std::vector;
 using std::string;
