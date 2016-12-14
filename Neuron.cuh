@@ -6,6 +6,8 @@
 #include <vector>
 #include <random>
 
+#include <thrust/device_vector.h>
+
 using std::vector;
 using std::string;
 
@@ -35,7 +37,6 @@ public:
 private:
   unsigned long num_input = 0;
   int activation_type = 0;
-  vector<double> inputWeights;
   double delta = 0.0; // 修正量
   double bias = 0.0; // ニューロンのバイアス // -threshold
   double alpha = 0.01;
@@ -49,11 +50,17 @@ private:
   double beta_one = 0.9;
   double beta_two = 0.999;
   unsigned long iteration;
-  vector<double> m;
-  vector<double> nu;
 
   double dropout_rate; // どれくらいの割合で中間層ニューロンをDropoutさせるか
   double dropout_mask; // Dropoutのマスク値．0.0で殺して1.0で生かす
+
+  thrust::device_vector<double> d_inputValues;
+  thrust::device_vector<double> d_m;
+  thrust::device_vector<double> d_nu;
+  thrust::device_vector<double> d_inputWeights;
+  thrust::device_vector<double> d_adam_result;
+  thrust::device_vector<double> d_output_result;
+  thrust::device_vector<double> d_learn_output_result;
 };
 
 #endif //NN_CUDA_NEURON_H

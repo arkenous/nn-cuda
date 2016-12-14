@@ -5,6 +5,9 @@
 #include <thread>
 #include <sstream>
 
+#include <thrust/device_vector.h>
+#include <thrust/copy.h>
+
 using std::vector;
 using std::string;
 using std::stringstream;

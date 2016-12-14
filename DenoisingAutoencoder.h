@@ -15,7 +15,6 @@ public:
   DenoisingAutoencoder(const unsigned long num_input, const float compression_rate);
   string learn(const vector<vector<double>> &input,
                     const vector<vector<double>> &noisy_input);
-  vector<double> out(const vector<double> &input, const bool showResult);
   vector<vector<double>> getMiddleOutput(const vector<vector<double>> &noisy_input);
   unsigned long getCurrentMiddleNeuronNum();
 

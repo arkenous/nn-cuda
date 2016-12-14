@@ -1,8 +1,9 @@
 
 #include <iostream>
 #include <sstream>
-#include "DenoisingAutoencoder.h"
 #include <thread>
+
+#include "DenoisingAutoencoder.h"
 
 using std::vector;
 using std::thread;
@@ -10,6 +11,7 @@ using std::string;
 using std::stringstream;
 using std::cout;
 using std::endl;
+using std::ref;
 
 DenoisingAutoencoder::DenoisingAutoencoder(const unsigned long num_input,
                                            const float compression_rate) {
@@ -157,7 +159,8 @@ string DenoisingAutoencoder::learn(const vector<vector<double>> &input,
 
 vector<vector<double>>
 DenoisingAutoencoder::getMiddleOutput(const vector<vector<double>> &noisy_input) {
-  vector<vector<double>> middle_output(noisy_input.size());
+  vector<vector<double>> middle_output(noisy_input.size(), vector<double>(middle_neuron_num, 0.0));
+
   vector<thread> threads(num_thread);
   unsigned long charge;
 
@@ -193,8 +196,6 @@ void DenoisingAutoencoder::outForwardThread(const int begin, const int end) {
 void
 DenoisingAutoencoder::outLearnThread(const vector<double> &in, const vector<double> &ans,
                                      const int begin, const int end) {
-  // Dropoutを用いた学習済みNNの出力を得るようにする
-  vector<double> output = out(in, false);
   for (int neuron = begin; neuron < end; ++neuron) {
     // 出力層ニューロンのdeltaの計算
     double delta = o[neuron] - ans[neuron];
@@ -234,43 +235,6 @@ void DenoisingAutoencoder::middleLearnThread(const vector<double> &in, const int
     // 学習
     middle_neurons[neuron].learn(delta, in);
   }
-}
-
-vector<double> DenoisingAutoencoder::out(const vector<double> &input,
-                                              const bool showResult) {
-  vector<thread> threads(num_thread);
-  unsigned long charge = 1;
-  threads.clear();
-  if (middle_neuron_num <= num_thread) charge = 1;
-  else charge = middle_neuron_num / num_thread;
-  for (int i = 0; i < middle_neuron_num; i += charge)
-    if (i != 0 && middle_neuron_num / i == 1)
-      threads.push_back(thread(&DenoisingAutoencoder::middleOutThread, this,
-                                    ref(input), i, middle_neuron_num));
-    else
-      threads.push_back(thread(&DenoisingAutoencoder::middleOutThread, this,
-                                    ref(input), i, i + charge));
-  for (thread &th : threads) th.join();
-
-  threads.clear();
-  if (output_neuron_num <= num_thread) charge = 1;
-  else charge = output_neuron_num / num_thread;
-  for (int i = 0; i < output_neuron_num; i += charge)
-    if (i != 0 && output_neuron_num / i == 1)
-      threads.push_back(thread(&DenoisingAutoencoder::outOutThread, this,
-                                    i, output_neuron_num));
-    else
-      threads.push_back(thread(&DenoisingAutoencoder::outOutThread, this,
-                                    i, i + charge));
-  for (thread &th : threads) th.join();
-
-  if (showResult) {
-    for (int neuron = 0; neuron < output_neuron_num; ++neuron)
-      cout << "output[" << neuron << "]: " << learnedO[neuron] << " ";
-    cout << endl;
-  }
-
-  return learnedO;
 }
 
 void DenoisingAutoencoder::middleOutThread(const vector<double> &in,
