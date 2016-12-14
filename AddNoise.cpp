@@ -1,0 +1,32 @@
+
+#include "AddNoise.h"
+#include <vector>
+#include <random>
+
+using std::vector;
+using std::random_device;
+using std::mt19937;
+using std::uniform_real_distribution;
+
+/**
+ * データごとに0.0以上1.0未満の乱数を生成し，rate未満であればそのデータを0.0にする
+ * @param input ノイズをのせるデータ
+ * @param rate ノイズをのせる確率
+ * @return ノイズをのせたデータ
+ */
+vector<vector<double>> add_noise(const vector<vector<double>> &input, const float rate) {
+  random_device rnd;
+  mt19937 mt;
+  mt.seed(rnd());
+  uniform_real_distribution<double> real_rnd(0.0, 1.0);
+
+  vector<vector<double>> result(input);
+
+  for (unsigned long i = 0, i_s = result.size(); i < i_s; ++i) {
+    for (unsigned long j = 0, j_s = result[i].size(); j < j_s; ++j) {
+      if (real_rnd(mt) < rate) result[i][j] = 0.0;
+    }
+  }
+
+  return result;
+}
