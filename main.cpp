@@ -19,7 +19,7 @@ using std::shuffle;
 
 int main() {
   double dropout_rate = 0.5;
-  unsigned long num_sda_layer = 50;
+  unsigned long num_sda_layer = 10;
   float sda_compression_rate = 0.2;
   cout << dropout_rate << " " << num_sda_layer << " " << sda_compression_rate << endl;
 
