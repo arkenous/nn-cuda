@@ -19,8 +19,8 @@ using std::shuffle;
 
 int main() {
   double dropout_rate = 0.5;
-  unsigned long num_sda_layer = 10;
-  float sda_compression_rate = 0.2;
+  unsigned long num_sda_layer = 1;
+  float sda_compression_rate = 0.8;
   cout << dropout_rate << " " << num_sda_layer << " " << sda_compression_rate << endl;
 
   random_device rnd;
@@ -39,21 +39,21 @@ int main() {
   // test_successのシャッフル
   shuffle(me.begin(), me.end(), mt);
   shuffle(noised.begin(), noised.end(), mt);
+  shuffle(other.begin(), other.end(), mt);
 
   vector<vector<double>> train;
   train.push_back(me[0]);
   train.push_back(me[1]);
   train.push_back(me[2]);
+  train.push_back(other[0]);
+  train.push_back(other[1]);
+  train.push_back(other[2]);
 
   StackedDenoisingAutoencoder stackedDenoisingAutoencoder;
   string sda_params = stackedDenoisingAutoencoder.learn(train,
                                                         num_sda_layer,
                                                         sda_compression_rate);
   unsigned long mlp_input_size = stackedDenoisingAutoencoder.getNumMiddleNeuron();
-
-  train.push_back(noised[0]);
-  train.push_back(noised[1]);
-  train.push_back(noised[2]);
 
   MultiLayerPerceptron mlp = MultiLayerPerceptron(mlp_input_size, mlp_input_size,
                                                   answer[0].size(), 1, 1,
