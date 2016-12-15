@@ -54,6 +54,10 @@ private:
   double dropout_rate; // どれくらいの割合で中間層ニューロンをDropoutさせるか
   double dropout_mask; // Dropoutのマスク値．0.0で殺して1.0で生かす
 
+  vector<double> h_inputWeights;
+  vector<double> h_m;
+  vector<double> h_nu;
+
   thrust::device_vector<double> d_inputValues;
   thrust::device_vector<double> d_m;
   thrust::device_vector<double> d_nu;

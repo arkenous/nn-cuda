@@ -132,6 +132,10 @@ Neuron::Neuron(const unsigned long num_input, const vector<double> &weight,
   d_adam_result = thrust::device_vector<double>(num_input);
   d_output_result = thrust::device_vector<double>(num_input);
   d_learn_output_result = thrust::device_vector<double>(num_input);
+
+  h_inputWeights.resize(num_input);
+  h_m.resize(num_input);
+  h_nu.resize(num_input);
 }
 
 /**
@@ -166,10 +170,12 @@ void Neuron::learn(const double delta, const vector<double> &inputValues) {
 
     thrust::transform(d_m.begin(), d_m.end(), d_nu.begin(), d_adam_result.begin(),
                       learn_functor(beta_one, beta_two, iteration, epsilon, alpha));
-
     thrust::transform(d_inputWeights.begin(), d_inputWeights.end(), d_adam_result.begin(),
                       d_inputWeights.begin(), thrust::minus<double>());
 
+    thrust::copy(d_m.begin(), d_m.end(), h_m.begin());
+    thrust::copy(d_nu.begin(), d_nu.end(), h_nu.begin());
+    thrust::copy(d_inputWeights.begin(), d_inputWeights.end(), h_inputWeights.begin());
 
     // 確率的勾配降下でバイアスを更新
     this->bias -= (this->alpha * this->delta) - (this->alpha * this->rambda * this->bias);
@@ -268,7 +274,7 @@ double Neuron::activation_relu(const double x) {
  * @return 結合荷重
  */
 double Neuron::getInputWeightIndexOf(const int i) {
-  return this->d_inputWeights[i];
+  return this->h_inputWeights[i];
 }
 
 /**
@@ -287,11 +293,11 @@ double Neuron::getBias() {
 }
 
 double Neuron::getMIndexOf(const int i) {
-  return this->d_m[i];
+  return this->h_m[i];
 }
 
 double Neuron::getNuIndexOf(const int i) {
-  return this->d_nu[i];
+  return this->h_nu[i];
 }
 
 unsigned long Neuron::getIteration() {
@@ -306,7 +312,7 @@ string Neuron::toString() {
   stringstream ss;
   ss << "weight : ";
   for (int neuron = 0; neuron < num_input; ++neuron)
-    ss << d_inputWeights[neuron] << " , ";
+    ss << h_inputWeights[neuron] << " , ";
 
   string output = ss.str();
   return output;
