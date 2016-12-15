@@ -218,8 +218,7 @@ void DenoisingAutoencoder::middleLearnThread(const vector<double> &in, const int
     double sumDelta = 0.0;
 
     for (int k = 0; k < output_neuron_num; ++k) {
-      Neuron n = output_neurons[k];
-      sumDelta += n.getInputWeightIndexOf(neuron) * n.getDelta();
+      sumDelta += output_neurons[k].getInputWeightIndexOf(neuron) * output_neurons[k].getDelta();
     }
 
     double delta;

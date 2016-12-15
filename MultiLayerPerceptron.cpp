@@ -508,8 +508,7 @@ void MultiLayerPerceptron::middleLastLayerLearnThread(const int begin, const int
     // 中間層ニューロンのdeltaを計算
     double sumDelta = 0.0;
     for (int k = 0; k < output_neuron_num; ++k) {
-      Neuron n = outputNeurons[k];
-      sumDelta += n.getInputWeightIndexOf(neuron) * n.getDelta();
+      sumDelta += outputNeurons[k].getInputWeightIndexOf(neuron) * outputNeurons[k].getDelta();
     }
 
     // どの活性化関数を用いるかで，deltaの計算方法が変わる
@@ -544,8 +543,8 @@ void MultiLayerPerceptron::middleMiddleLayerLearnThread(const int layer,
     // 中間層ニューロンのdeltaを計算
     double sumDelta = 0.0;
     for (int k = 0; k < middle_neuron_num; ++k) {
-      Neuron n = middle_neurons[layer + 1][k];
-      sumDelta += n.getInputWeightIndexOf(neuron) * n.getDelta();
+      sumDelta += middle_neurons[layer + 1][k].getInputWeightIndexOf(neuron)
+                  * middle_neurons[layer + 1][k].getDelta();
     }
 
     double delta;
@@ -580,13 +579,12 @@ void MultiLayerPerceptron::middleFirstLayerLearnThread(const int begin, const in
 
     if (middle_layer_number > 1) {
       for (int k = 0; k < middle_neuron_num; ++k) {
-        Neuron n = middle_neurons[1][k];
-        sumDelta += n.getInputWeightIndexOf(neuron) * n.getDelta();
+        sumDelta += middle_neurons[1][k].getInputWeightIndexOf(neuron)
+                    * middle_neurons[1][k].getDelta();
       }
     } else {
       for (int k = 0; k < output_neuron_num; ++k) {
-        Neuron n = outputNeurons[k];
-        sumDelta += n.getInputWeightIndexOf(neuron) * n.getDelta();
+        sumDelta += outputNeurons[k].getInputWeightIndexOf(neuron) * outputNeurons[k].getDelta();
       }
     }
 
@@ -612,8 +610,8 @@ void MultiLayerPerceptron::sdaLastLayerLearnThread(const int begin, const int en
   for (int neuron = begin; neuron < end; ++neuron) {
     double sumDelta = 0.0;
     for (unsigned long k = 0, num_neuron = middle_neurons[0].size(); k < num_neuron; ++k) {
-      Neuron n = middle_neurons[0][k];
-      sumDelta += n.getInputWeightIndexOf(neuron) * n.getDelta();
+      sumDelta += middle_neurons[0][k].getInputWeightIndexOf(neuron)
+                  * middle_neurons[0][k].getDelta();
     }
 
     double delta;
@@ -630,8 +628,8 @@ void MultiLayerPerceptron::sdaMiddleLayerLearnThread(const int layer, const int 
   for (int neuron = begin; neuron < end; ++neuron) {
     double sumDelta = 0.0;
     for (unsigned long k = 0, num_neuron = sda_neurons[layer + 1].size(); k < num_neuron; ++k) {
-      Neuron n = sda_neurons[layer + 1][k];
-      sumDelta += n.getInputWeightIndexOf(neuron) * n.getDelta();
+      sumDelta += sda_neurons[layer + 1][k].getInputWeightIndexOf(neuron)
+                  * sda_neurons[layer + 1][k].getDelta();
     }
 
     double delta;
@@ -649,13 +647,12 @@ void MultiLayerPerceptron::sdaFirstLayerLearnThread(const vector<double> &in, co
 
     if (sda_layer_size > 1) {
       for (unsigned long k = 0, num_neuron = sda_neurons[1].size(); k < num_neuron; ++k) {
-        Neuron n = sda_neurons[1][k];
-        sumDelta += n.getInputWeightIndexOf(neuron) * n.getDelta();
+        sumDelta += sda_neurons[1][k].getInputWeightIndexOf(neuron) * sda_neurons[1][k].getDelta();
       }
     } else {
       for (unsigned long k = 0, num_neuron = middle_neurons[0].size(); k < num_neuron; ++k) {
-        Neuron n = middle_neurons[0][k];
-        sumDelta += n.getInputWeightIndexOf(neuron) * n.getDelta();
+        sumDelta += middle_neurons[0][k].getInputWeightIndexOf(neuron)
+                    * middle_neurons[0][k].getDelta();
       }
     }
 
