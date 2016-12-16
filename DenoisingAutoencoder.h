@@ -21,7 +21,7 @@ public:
 
 private:
   static const unsigned int MAX_TRIAL = 1000; // 学習上限回数
-  constexpr static const double MAX_GAP = 5.0; // 許容する誤差
+  constexpr static const double MAX_GAP = 1.0; // 許容する誤差
   unsigned long num_thread = (unsigned long)sysconf(_SC_NPROCESSORS_ONLN);
 
   unsigned long input_neuron_num;
