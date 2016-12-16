@@ -13,7 +13,7 @@ public:
   StackedDenoisingAutoencoder();
 
   string learn(const vector<vector<double>> &input, const unsigned long result_num_dimen,
-                    const float compression_rate);
+                    const float compression_rate, const double dropout_rate);
   unsigned long getNumMiddleNeuron();
 
 private:

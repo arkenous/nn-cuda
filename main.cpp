@@ -50,9 +50,8 @@ int main() {
   train.push_back(other[2]);
 
   StackedDenoisingAutoencoder stackedDenoisingAutoencoder;
-  string sda_params = stackedDenoisingAutoencoder.learn(train,
-                                                        num_sda_layer,
-                                                        sda_compression_rate);
+  string sda_params = stackedDenoisingAutoencoder.learn(train, num_sda_layer,
+                                                        sda_compression_rate, dropout_rate);
   unsigned long mlp_input_size = stackedDenoisingAutoencoder.getNumMiddleNeuron();
 
   MultiLayerPerceptron mlp = MultiLayerPerceptron(mlp_input_size, mlp_input_size,

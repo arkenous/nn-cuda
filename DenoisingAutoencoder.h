@@ -12,7 +12,8 @@ using std::string;
 
 class DenoisingAutoencoder {
 public:
-  DenoisingAutoencoder(const unsigned long num_input, const float compression_rate);
+  DenoisingAutoencoder(const unsigned long num_input, const float compression_rate,
+                       const double dropout_rate);
   string learn(const vector<vector<double>> &input,
                     const vector<vector<double>> &noisy_input);
   vector<vector<double>> getMiddleOutput(const vector<vector<double>> &noisy_input);

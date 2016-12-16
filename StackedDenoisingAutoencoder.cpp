@@ -16,15 +16,16 @@ using std::uniform_real_distribution;
 StackedDenoisingAutoencoder::StackedDenoisingAutoencoder() {}
 
 string StackedDenoisingAutoencoder::learn(const vector<vector<double>> &input,
-                                               const unsigned long result_num_layer,
-                                               const float compression_rate) {
+                                          const unsigned long result_num_layer,
+                                          const float compression_rate,
+                                          const double dropout_rate) {
   unsigned long num_sda_layer = 0;
   stringstream ss;
 
   vector<vector<double>> answer(input);
   vector<vector<double>> noisy_input(add_noise(input, 0.1));
 
-  DenoisingAutoencoder denoisingAutoencoder(noisy_input[0].size(), compression_rate);
+  DenoisingAutoencoder denoisingAutoencoder(noisy_input[0].size(), compression_rate, dropout_rate);
   ss << denoisingAutoencoder.learn(answer, noisy_input) << "$";
 
   num_sda_layer++;
@@ -33,7 +34,8 @@ string StackedDenoisingAutoencoder::learn(const vector<vector<double>> &input,
     answer = vector<vector<double>>(noisy_input);
     noisy_input = add_noise(denoisingAutoencoder.getMiddleOutput(noisy_input), 0.1);
 
-    denoisingAutoencoder = DenoisingAutoencoder(noisy_input[0].size(), compression_rate);
+    denoisingAutoencoder = DenoisingAutoencoder(noisy_input[0].size(), compression_rate,
+                                                dropout_rate);
     ss << denoisingAutoencoder.learn(answer, noisy_input) << "$";
 
     num_sda_layer++;

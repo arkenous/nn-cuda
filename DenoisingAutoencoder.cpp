@@ -2,6 +2,7 @@
 #include <iostream>
 #include <sstream>
 #include <thread>
+#include <random>
 
 #include "DenoisingAutoencoder.h"
 
@@ -12,9 +13,13 @@ using std::stringstream;
 using std::cout;
 using std::endl;
 using std::ref;
+using std::random_device;
+using std::mt19937;
+using std::uniform_real_distribution;
 
 DenoisingAutoencoder::DenoisingAutoencoder(const unsigned long num_input,
-                                           const float compression_rate) {
+                                           const float compression_rate,
+                                           const double dropout_rate) {
   input_neuron_num = num_input;
   middle_neuron_num = (unsigned long) (num_input * (1.0 - compression_rate));
   output_neuron_num = num_input;
@@ -24,13 +29,13 @@ DenoisingAutoencoder::DenoisingAutoencoder(const unsigned long num_input,
   middle_neurons.resize(middle_neuron_num);
   for (int neuron = 0; neuron < middle_neuron_num; ++neuron) {
     middle_neurons[neuron] = Neuron(input_neuron_num, emptyVector, emptyVector, emptyVector,
-                                    0, 0.0, middle_layer_type, 0.0);
+                                    0, 0.0, middle_layer_type, dropout_rate);
   }
 
   output_neurons.resize(output_neuron_num);
   for (int neuron = 0; neuron < output_neuron_num; ++neuron) {
     output_neurons[neuron] = Neuron(middle_neuron_num, emptyVector, emptyVector, emptyVector,
-                                    0, 0.0, 0, 0.0);
+                                    0, 0.0, 0, dropout_rate);
   }
 
   h.resize(middle_neuron_num);
@@ -43,12 +48,20 @@ string DenoisingAutoencoder::learn(const vector<vector<double>> &input,
                                         const vector<vector<double>> &noisy_input) {
   int succeed = 0; // 連続正解回数のカウンタを初期化
 
+  random_device rnd;
+  mt19937 mt;
+  mt.seed(rnd());
+  uniform_real_distribution<double> real_rnd(0.0, 1.0);
+
   for (int trial = 0; trial < MAX_TRIAL; ++trial) {
-    // Dropoutは無効にする
+    //region Dropoutを設定する
     for (int neuron = 0; neuron < middle_neuron_num; ++neuron)
-      middle_neurons[neuron].dropout(1.0);
+      middle_neurons[neuron].dropout(real_rnd(mt));
+
+    // 出力層はDropoutを無効化する
     for (int neuron = 0; neuron < output_neuron_num; ++neuron)
       output_neurons[neuron].dropout(1.0);
+    //endregion
 
     // 使用する教師データを選択
     vector<double> in = noisy_input[trial % input.size()];
