@@ -1,7 +1,6 @@
 
 #include <iostream>
 #include <sstream>
-#include <thread>
 #include <random>
 
 #include "DenoisingAutoencoder.h"
@@ -42,6 +41,8 @@ DenoisingAutoencoder::DenoisingAutoencoder(const unsigned long num_input,
   o.resize(output_neuron_num);
   learnedH.resize(middle_neuron_num);
   learnedO.resize(output_neuron_num);
+
+  threads = vector<thread>(num_thread);
 }
 
 string DenoisingAutoencoder::learn(const vector<vector<double>> &input,
@@ -68,7 +69,6 @@ string DenoisingAutoencoder::learn(const vector<vector<double>> &input,
     ans = input[trial % input.size()];
 
     //region Feed Forward
-    vector<thread> threads(num_thread);
     unsigned long charge;
     threads.clear();
     if (middle_neuron_num <= num_thread) charge = 1;
@@ -174,7 +174,6 @@ vector<vector<double>>
 DenoisingAutoencoder::getMiddleOutput(const vector<vector<double>> &noisy_input) {
   vector<vector<double>> middle_output(noisy_input.size(), vector<double>(middle_neuron_num, 0.0));
 
-  vector<thread> threads(num_thread);
   unsigned long charge;
 
   for (unsigned long set = 0, set_size = noisy_input.size(); set < set_size; ++set) {

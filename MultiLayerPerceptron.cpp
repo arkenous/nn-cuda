@@ -2,7 +2,6 @@
 #include "MultiLayerPerceptron.h"
 #include "Neuron.cuh"
 #include "iostream"
-#include <thread>
 #include <sstream>
 
 #include <thrust/device_vector.h>
@@ -73,6 +72,8 @@ MultiLayerPerceptron::MultiLayerPerceptron(const unsigned long input,
     this->outputNeurons[neuron] = Neuron(middle_neuron_num, emptyVector, emptyVector, emptyVector,
                                          0, 0.0, 1, dropout_rate);
   }
+
+  threads = vector<thread>(num_thread);
 }
 
 void MultiLayerPerceptron::setupSdA(const string &sda_params, const double dropout_rate) {
@@ -179,7 +180,6 @@ void MultiLayerPerceptron::learn(const vector<vector<double>> &x,
     in = x[trial % answer.size()]; // 利用する教師入力データ
     ans = answer[trial % answer.size()]; // 教師出力データ
 
-    vector<thread> threads(num_thread);
     unsigned long charge;
 
     // Feed Forward
@@ -673,7 +673,6 @@ vector<double> MultiLayerPerceptron::out(const vector<double> &input, const bool
 
   // Feed Forward
   // SdA First Layer
-  vector<thread> threads(num_thread);
   unsigned long charge;
   threads.clear();
   if (sda_neurons[0].size() <= num_thread) charge = 1;

@@ -3,11 +3,13 @@
 #define NN_CUDA_MULTILAYERPERCEPTRON_H
 
 
+#include <thread>
 #include <zconf.h>
 #include "Neuron.cuh"
 
 using std::vector;
 using std::string;
+using std::thread;
 
 class MultiLayerPerceptron {
 public:
@@ -40,6 +42,8 @@ private:
   int middle_layer_type = 0; // 中間層の活性化関数の種類指定．0: identity 1: sigmoid 2: tanh 3: ReLU
 
   bool successFlg = true;
+
+  vector<thread> threads;
 
   vector<double> in;
   vector<double> ans;

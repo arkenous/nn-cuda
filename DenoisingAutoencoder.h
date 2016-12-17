@@ -4,11 +4,13 @@
 
 #include <string>
 #include <vector>
+#include <thread>
 #include <zconf.h>
 #include "Neuron.cuh"
 
 using std::vector;
 using std::string;
+using std::thread;
 
 class DenoisingAutoencoder {
 public:
@@ -34,6 +36,8 @@ private:
 
   vector<double> in;
   vector<double> ans;
+
+  vector<thread> threads;
 
   vector<Neuron> middle_neurons;
   vector<Neuron> output_neurons;
