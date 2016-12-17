@@ -41,6 +41,9 @@ private:
 
   bool successFlg = true;
 
+  vector<double> in;
+  vector<double> ans;
+
   vector<vector<Neuron>> sda_neurons;
   vector<vector<double>> sda_out;
 
@@ -56,22 +59,21 @@ private:
 
   vector<double> separate_by_camma(const string &input);
 
-  void sdaFirstLayerOutThread(const vector<double> &in, const int begin, const int end);
+  void sdaFirstLayerOutThread(const int begin, const int end);
   void sdaOtherLayerOutThread(const int layer, const int begin, const int end);
 
   void middleFirstLayerForwardThread(const int begin, const int end);
   void middleLayerForwardThread(const int layer, const int begin, const int end);
   void outForwardThread(const int begin, const int end);
 
-  void outLearnThread(const vector<double> &in, const vector<double> &ans,
-                      const int begin, const int end);
+  void outLearnThread(const int begin, const int end);
   void middleLastLayerLearnThread(const int begin, const int end);
   void middleMiddleLayerLearnThread(const int layer, const int begin, const int end);
   void middleFirstLayerLearnThread(const int begin, const int end);
 
   void sdaLastLayerLearnThread(const int begin, const int end);
   void sdaMiddleLayerLearnThread(const int layer, const int begin, const int end);
-  void sdaFirstLayerLearnThread(const vector<double> &in, const int begin, const int end);
+  void sdaFirstLayerLearnThread(const int begin, const int end);
 
   void middleFirstLayerOutThread(const int begin, const int end);
   void middleLayerOutThread(const int layer, const int begin, const int end);

@@ -32,6 +32,9 @@ private:
 
   bool successFlg = true;
 
+  vector<double> in;
+  vector<double> ans;
+
   vector<Neuron> middle_neurons;
   vector<Neuron> output_neurons;
 
@@ -41,14 +44,13 @@ private:
   vector<double> learnedO;
 
 
-  void middleForwardThread(const vector<double> &in, const int begin, const int end);
+  void middleForwardThread(const int begin, const int end);
   void outForwardThread(const int begin, const int end);
 
-  void outLearnThread(const vector<double> &in, const vector<double> &ans,
-                      const int begin, const int end);
-  void middleLearnThread(const vector<double> &in, const int begin, const int end);
+  void outLearnThread(const int begin, const int end);
+  void middleLearnThread(const int begin, const int end);
 
-  void middleOutThread(const vector<double> &in, const int begin, const int end);
+  void middleOutThread(const int begin, const int end);
   void outOutThread(const int begin, const int end);
 
   double mean_squared_error(const double output, const double answer);

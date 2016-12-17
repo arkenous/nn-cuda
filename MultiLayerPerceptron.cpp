@@ -176,8 +176,8 @@ void MultiLayerPerceptron::learn(const vector<vector<double>> &x,
     }
 
     // 使用する教師データを選択
-    vector<double> in = x[trial % answer.size()]; // 利用する教師入力データ
-    vector<double> ans = answer[trial % answer.size()]; // 教師出力データ
+    in = x[trial % answer.size()]; // 利用する教師入力データ
+    ans = answer[trial % answer.size()]; // 教師出力データ
 
     vector<thread> threads(num_thread);
     unsigned long charge;
@@ -190,10 +190,10 @@ void MultiLayerPerceptron::learn(const vector<vector<double>> &x,
     for (unsigned long i = 0, num_neuron = sda_neurons[0].size(); i < num_neuron; i += charge) {
       if (i != 0 && num_neuron / i == 1) {
         threads.push_back(thread(&MultiLayerPerceptron::sdaFirstLayerOutThread, this,
-                                      ref(in), i, num_neuron));
+                                      i, num_neuron));
       } else {
         threads.push_back(thread(&MultiLayerPerceptron::sdaFirstLayerOutThread, this,
-                                      ref(in), i, i + charge));
+                                      i, i + charge));
       }
     }
     for (thread &th : threads) th.join();
@@ -280,10 +280,10 @@ void MultiLayerPerceptron::learn(const vector<vector<double>> &x,
     for (int i = 0; i < output_neuron_num; i += charge) {
       if (i != 0 && output_neuron_num / i == 1) {
         threads.push_back(thread(&MultiLayerPerceptron::outLearnThread, this,
-                                 ref(in), ref(ans), i, output_neuron_num));
+                                 i, output_neuron_num));
       } else {
         threads.push_back(thread(&MultiLayerPerceptron::outLearnThread, this,
-                                 ref(in), ref(ans), i, i + charge));
+                                 i, i + charge));
       }
     }
     for (thread &th : threads) th.join();
@@ -395,10 +395,10 @@ void MultiLayerPerceptron::learn(const vector<vector<double>> &x,
     for (int i = 0; i < num_neuron; i += charge) {
       if (i != 0 && num_neuron / i == 1) {
         threads.push_back(thread(&MultiLayerPerceptron::sdaFirstLayerLearnThread, this,
-                                      ref(in), i, num_neuron));
+                                      i, num_neuron));
       } else {
         threads.push_back(thread(&MultiLayerPerceptron::sdaFirstLayerLearnThread, this,
-                                      ref(in), i, i + charge));
+                                      i, i + charge));
       }
     }
     for (thread &th : threads) th.join();
@@ -436,8 +436,7 @@ string MultiLayerPerceptron::toString() {
   return str;
 }
 
-void MultiLayerPerceptron::sdaFirstLayerOutThread(const vector<double> &in,
-                                                  const int begin, const int end) {
+void MultiLayerPerceptron::sdaFirstLayerOutThread(const int begin, const int end) {
   for (int neuron = begin; neuron < end; ++neuron)
     sda_out[0][neuron] = sda_neurons[0][neuron].output(in);
 }
@@ -479,8 +478,7 @@ void MultiLayerPerceptron::outForwardThread(const int begin, const int end) {
  * @param begin 学習するニューロンセットの開始点
  * @param end 学習するニューロンセットの終了点
  */
-void MultiLayerPerceptron::outLearnThread(const vector<double> &in, const vector<double> &ans,
-                                          const int begin, const int end) {
+void MultiLayerPerceptron::outLearnThread(const int begin, const int end) {
   for (int neuron = begin; neuron < end; ++neuron) {
     // 出力層ニューロンのdeltaの計算
     double delta = o[neuron] - ans[neuron];
@@ -641,7 +639,7 @@ void MultiLayerPerceptron::sdaMiddleLayerLearnThread(const int layer, const int 
   }
 }
 
-void MultiLayerPerceptron::sdaFirstLayerLearnThread(const vector<double> &in, const int begin, const int end) {
+void MultiLayerPerceptron::sdaFirstLayerLearnThread(const int begin, const int end) {
   for (int neuron = begin; neuron < end; ++neuron) {
     double sumDelta = 0.0;
 
@@ -671,6 +669,8 @@ void MultiLayerPerceptron::sdaFirstLayerLearnThread(const vector<double> &in, co
  * @param showResult 結果をコンソールに出力するかを指定する
  */
 vector<double> MultiLayerPerceptron::out(const vector<double> &input, const bool showResult) {
+  in = input;
+
   // Feed Forward
   // SdA First Layer
   vector<thread> threads(num_thread);
@@ -681,10 +681,10 @@ vector<double> MultiLayerPerceptron::out(const vector<double> &input, const bool
   for (unsigned long i = 0, num_neuron = sda_neurons[0].size(); i < num_neuron; i += charge) {
     if (i != 0 && num_neuron / i == 1) {
       threads.push_back(thread(&MultiLayerPerceptron::sdaFirstLayerOutThread, this,
-                                    ref(input), i, num_neuron));
+                                    i, num_neuron));
     } else {
       threads.push_back(thread(&MultiLayerPerceptron::sdaFirstLayerOutThread, this,
-                                    ref(input), i, i + charge));
+                                    i, i + charge));
     }
   }
   for (thread &th : threads) th.join();

@@ -64,8 +64,8 @@ string DenoisingAutoencoder::learn(const vector<vector<double>> &input,
     //endregion
 
     // 使用する教師データを選択
-    vector<double> in = noisy_input[trial % input.size()];
-    vector<double> ans = input[trial % input.size()];
+    in = noisy_input[trial % input.size()];
+    ans = input[trial % input.size()];
 
     //region Feed Forward
     vector<thread> threads(num_thread);
@@ -76,10 +76,10 @@ string DenoisingAutoencoder::learn(const vector<vector<double>> &input,
     for (int i = 0; i < middle_neuron_num; i += charge)
       if (i != 0 && middle_neuron_num / i == 1)
         threads.push_back(thread(&DenoisingAutoencoder::middleForwardThread, this,
-                                      ref(in), i, middle_neuron_num));
+                                      i, middle_neuron_num));
       else
         threads.push_back(thread(&DenoisingAutoencoder::middleForwardThread, this,
-                                      ref(in), i, i + charge));
+                                      i, i + charge));
     for (thread &th : threads) th.join();
 
     threads.clear();
@@ -105,10 +105,10 @@ string DenoisingAutoencoder::learn(const vector<vector<double>> &input,
     for (int i = 0; i < output_neuron_num; i += charge)
       if (i != 0 && output_neuron_num / i == 1)
         threads.push_back(thread(&DenoisingAutoencoder::outLearnThread, this,
-                                      ref(in), ref(ans), i, output_neuron_num));
+                                      i, output_neuron_num));
       else
         threads.push_back(thread(&DenoisingAutoencoder::outLearnThread, this,
-                                      ref(in), ref(ans), i, i + charge));
+                                      i, i + charge));
     for (thread &th : threads) th.join();
 
     if (successFlg) {
@@ -123,10 +123,10 @@ string DenoisingAutoencoder::learn(const vector<vector<double>> &input,
     for (int i = 0; i < middle_neuron_num; i += charge)
       if (i != 0 && middle_neuron_num / i == 1)
         threads.push_back(thread(&DenoisingAutoencoder::middleLearnThread, this,
-                                      ref(in), i, middle_neuron_num));
+                                      i, middle_neuron_num));
       else
         threads.push_back(thread(&DenoisingAutoencoder::middleLearnThread, this,
-                                      ref(in), i, i + charge));
+                                      i, i + charge));
     for (thread &th : threads) th.join();
     
     
@@ -178,16 +178,18 @@ DenoisingAutoencoder::getMiddleOutput(const vector<vector<double>> &noisy_input)
   unsigned long charge;
 
   for (unsigned long set = 0, set_size = noisy_input.size(); set < set_size; ++set) {
+    in = noisy_input[set];
+
     threads.clear();
     if (middle_neuron_num <= num_thread) charge = 1;
     else charge = middle_neuron_num / num_thread;
     for (int i = 0; i < middle_neuron_num; i += charge)
       if (i != 0 && middle_neuron_num / i == 1)
         threads.push_back(thread(&DenoisingAutoencoder::middleOutThread, this,
-                                      ref(noisy_input[set]), i, middle_neuron_num));
+                                      i, middle_neuron_num));
       else
         threads.push_back(thread(&DenoisingAutoencoder::middleOutThread, this,
-                                      ref(noisy_input[set]), i, i + charge));
+                                      i, i + charge));
     for (thread &th : threads) th.join();
     middle_output[set] = learnedH;
   }
@@ -195,8 +197,7 @@ DenoisingAutoencoder::getMiddleOutput(const vector<vector<double>> &noisy_input)
   return middle_output;
 }
 
-void DenoisingAutoencoder::middleForwardThread(const vector<double> &in, const int begin,
-                                               const int end) {
+void DenoisingAutoencoder::middleForwardThread(const int begin, const int end) {
   for (int neuron = begin; neuron < end; ++neuron)
     h[neuron] = middle_neurons[neuron].learn_output(in);
 }
@@ -207,8 +208,7 @@ void DenoisingAutoencoder::outForwardThread(const int begin, const int end) {
 }
 
 void
-DenoisingAutoencoder::outLearnThread(const vector<double> &in, const vector<double> &ans,
-                                     const int begin, const int end) {
+DenoisingAutoencoder::outLearnThread(const int begin, const int end) {
   for (int neuron = begin; neuron < end; ++neuron) {
     // 出力層ニューロンのdeltaの計算
     double delta = o[neuron] - ans[neuron];
@@ -224,8 +224,7 @@ DenoisingAutoencoder::outLearnThread(const vector<double> &in, const vector<doub
   }
 }
 
-void DenoisingAutoencoder::middleLearnThread(const vector<double> &in, const int begin,
-                                             const int end) {
+void DenoisingAutoencoder::middleLearnThread(const int begin, const int end) {
   for (int neuron = begin; neuron < end; ++neuron) {
     // 中間層ニューロンのdeltaを計算
     double sumDelta = 0.0;
@@ -249,8 +248,7 @@ void DenoisingAutoencoder::middleLearnThread(const vector<double> &in, const int
   }
 }
 
-void DenoisingAutoencoder::middleOutThread(const vector<double> &in,
-                                           const int begin, const int end) {
+void DenoisingAutoencoder::middleOutThread(const int begin, const int end) {
   for (int neuron = begin; neuron < end; ++neuron)
     learnedH[neuron] = middle_neurons[neuron].output(in);
 }
