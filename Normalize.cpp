@@ -8,7 +8,6 @@ using namespace std;
 void normalize(vector<double> *input) {
   // 一つのセットにおける平均値を求める
   unsigned long input_size = (*input).size();
-  cout << "size: " << (*input).size() << endl;
   double avg = 0;
   double sum = 0;
   for (int data = 0; data < input_size; ++data) sum += (*input)[data];
