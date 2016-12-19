@@ -352,57 +352,6 @@ void MultiLayerPerceptron::learn(const vector<vector<double>> &x,
     for (thread &th : threads) th.join();
     //endregion
 
-    if (sda_layer_size > 1) {
-      threads.clear();
-      if (sda_neurons[sda_layer_size - 1].size() <= num_thread) charge = 1;
-      else charge = sda_neurons[sda_layer_size - 1].size() / num_thread;
-      for (unsigned long i = 0, num_neuron = sda_neurons[sda_layer_size - 1].size();
-           i < num_neuron; i += charge) {
-        if (i != 0 && num_neuron / i == 1) {
-          threads.push_back(thread(&MultiLayerPerceptron::sdaLastLayerLearnThread, this,
-                                        i, num_neuron));
-        } else {
-          threads.push_back(thread(&MultiLayerPerceptron::sdaLastLayerLearnThread, this,
-                                        i, i + charge));
-        }
-      }
-      for (thread &th : threads) th.join();
-    }
-
-    if (sda_layer_size > 2) {
-      for (unsigned long layer = sda_layer_size - 2; layer >= 1; --layer) {
-        unsigned long num_neuron = sda_neurons[layer].size();
-        if (num_neuron <= num_thread) charge = 1;
-        else charge = num_neuron / num_thread;
-        threads.clear();
-        for (int i = 0; i < num_neuron; i += charge) {
-          if (i != 0 && num_neuron / i == 1) {
-            threads.push_back(thread(&MultiLayerPerceptron::sdaMiddleLayerLearnThread, this,
-                                     layer, i, num_neuron));
-          } else {
-            threads.push_back(thread(&MultiLayerPerceptron::sdaMiddleLayerLearnThread, this,
-                                     layer, i, i + charge));
-          }
-        }
-        for (thread &th : threads) th.join();
-      }
-    }
-
-    threads.clear();
-    unsigned long num_neuron = sda_neurons[0].size();
-    if (num_neuron <= num_thread) charge = 1;
-    else charge = num_neuron / num_thread;
-    for (int i = 0; i < num_neuron; i += charge) {
-      if (i != 0 && num_neuron / i == 1) {
-        threads.push_back(thread(&MultiLayerPerceptron::sdaFirstLayerLearnThread, this,
-                                      i, num_neuron));
-      } else {
-        threads.push_back(thread(&MultiLayerPerceptron::sdaFirstLayerLearnThread, this,
-                                      i, i + charge));
-      }
-    }
-    for (thread &th : threads) th.join();
-
     //endregion
   }
 
@@ -601,65 +550,6 @@ void MultiLayerPerceptron::middleFirstLayerLearnThread(const int begin, const in
 
     // 学習
     middle_neurons[0][neuron].learn(delta, sda_out[sda_layer_size - 1]);
-  }
-}
-
-void MultiLayerPerceptron::sdaLastLayerLearnThread(const int begin, const int end) {
-  for (int neuron = begin; neuron < end; ++neuron) {
-    double sumDelta = 0.0;
-    for (unsigned long k = 0, num_neuron = middle_neurons[0].size(); k < num_neuron; ++k) {
-      sumDelta += middle_neurons[0][k].getInputWeightIndexOf(neuron)
-                  * middle_neurons[0][k].getDelta();
-    }
-
-    double delta;
-
-    // sigmoid
-    delta = (sda_out[sda_layer_size - 1][neuron]
-             * (1.0 - sda_out[sda_layer_size - 1][neuron])) * sumDelta;
-
-    sda_neurons[sda_layer_size - 1][neuron].learn(delta, sda_out[sda_layer_size - 2]);
-  }
-}
-
-void MultiLayerPerceptron::sdaMiddleLayerLearnThread(const int layer, const int begin, const int end) {
-  for (int neuron = begin; neuron < end; ++neuron) {
-    double sumDelta = 0.0;
-    for (unsigned long k = 0, num_neuron = sda_neurons[layer + 1].size(); k < num_neuron; ++k) {
-      sumDelta += sda_neurons[layer + 1][k].getInputWeightIndexOf(neuron)
-                  * sda_neurons[layer + 1][k].getDelta();
-    }
-
-    double delta;
-
-    // sigmoid
-    delta = (sda_out[layer][neuron] * (1.0 - sda_out[layer][neuron])) * sumDelta;
-
-    sda_neurons[layer][neuron].learn(delta, sda_out[layer - 1]);
-  }
-}
-
-void MultiLayerPerceptron::sdaFirstLayerLearnThread(const int begin, const int end) {
-  for (int neuron = begin; neuron < end; ++neuron) {
-    double sumDelta = 0.0;
-
-    if (sda_layer_size > 1) {
-      for (unsigned long k = 0, num_neuron = sda_neurons[1].size(); k < num_neuron; ++k) {
-        sumDelta += sda_neurons[1][k].getInputWeightIndexOf(neuron) * sda_neurons[1][k].getDelta();
-      }
-    } else {
-      for (unsigned long k = 0, num_neuron = middle_neurons[0].size(); k < num_neuron; ++k) {
-        sumDelta += middle_neurons[0][k].getInputWeightIndexOf(neuron)
-                    * middle_neurons[0][k].getDelta();
-      }
-    }
-
-    double delta;
-
-    // sigmoid
-    delta = (sda_out[0][neuron] * (1.0 - sda_out[0][neuron])) * sumDelta;
-
-    sda_neurons[0][neuron].learn(delta, in);
   }
 }
 
