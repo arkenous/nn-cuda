@@ -432,11 +432,12 @@ void MultiLayerPerceptron::outLearnThread(const int begin, const int end) {
     // 出力層ニューロンのdeltaの計算
     double delta = o[neuron] - ans[neuron];
 
-    cout << "MLP ce: " << crossEntropy(o[neuron], ans[neuron]) << endl;
-
     // 教師データとの誤差が十分小さい場合は学習しない．そうでなければ正解フラグをfalseに
     if (crossEntropy(o[neuron], ans[neuron]) < MAX_GAP) continue;
-    else successFlg = false;
+    else {
+      cout << "MLP ce: " << crossEntropy(o[neuron], ans[neuron]) << endl;
+      successFlg = false;
+    }
 
     // 出力層の学習
     outputNeurons[neuron].learn(delta, h[middle_layer_number - 1]);
