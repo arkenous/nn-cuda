@@ -27,7 +27,7 @@ int main() {
   mt19937 mt;
   mt.seed(rnd());
 
-  vector<vector<double>> noised = add_noise(me, 0.3);
+  vector<vector<double>> noised = add_random_noise(me, 1.0);
 
   for (unsigned long i = 0, size = me.size(); i < size; ++i)
     normalize(&me[i]);
@@ -45,14 +45,15 @@ int main() {
   train.push_back(me[0]);
   train.push_back(me[1]);
   train.push_back(me[2]);
-  train.push_back(other[0]);
-  train.push_back(other[1]);
-  train.push_back(other[2]);
 
   StackedDenoisingAutoencoder stackedDenoisingAutoencoder;
   string sda_params = stackedDenoisingAutoencoder.learn(train, num_sda_layer,
                                                         sda_compression_rate, dropout_rate);
   unsigned long mlp_input_size = stackedDenoisingAutoencoder.getNumMiddleNeuron();
+
+  train.push_back(noised[0]);
+  train.push_back(noised[1]);
+  train.push_back(noised[2]);
 
   MultiLayerPerceptron mlp = MultiLayerPerceptron(mlp_input_size, mlp_input_size,
                                                   answer[0].size(), 1, 1,
