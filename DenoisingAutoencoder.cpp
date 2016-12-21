@@ -55,6 +55,8 @@ string DenoisingAutoencoder::learn(const vector<vector<double>> &input,
   uniform_real_distribution<double> real_rnd(0.0, 1.0);
 
   for (int trial = 0; trial < MAX_TRIAL; ++trial) {
+    cout << "-----   trial: " << trial << "   -----" << endl;
+    
     //region Dropoutを設定する
     for (int neuron = 0; neuron < middle_neuron_num; ++neuron)
       middle_neurons[neuron].dropout(real_rnd(mt));
