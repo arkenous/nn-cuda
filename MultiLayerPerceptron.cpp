@@ -160,6 +160,7 @@ void MultiLayerPerceptron::learn(const vector<vector<double>> &x,
   uniform_real_distribution<double> real_rnd(0.0, 1.0); // 0.0以上1.0未満の範囲で値を生成する
 
   for (int trial = 0; trial < this->MAX_TRIAL; ++trial) {
+    cout << "-----   trial: " << trial << "   -----" << endl;
 
     for (int layer = 0; layer < sda_layer_size; ++layer) {
       for (unsigned long neuron = 0, num_neuron = sda_neurons[layer].size();
