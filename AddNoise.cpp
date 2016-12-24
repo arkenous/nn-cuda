@@ -2,6 +2,7 @@
 #include "AddNoise.h"
 #include <vector>
 #include <random>
+#include <algorithm>
 
 using std::vector;
 using std::random_device;
